@@ -9,6 +9,13 @@ Puppet::Type.type(:esx_reconfigureha).provide(:esx_reconfigureha, :parent => Pup
       if host == nil
         raise Puppet::Error, "An invalid host name or IP address is entered. Enter the correct host name and IP address."
       else
+        
+        # Check for maintenance mode
+        if host.summary.runtime.inMaintenanceMode
+          Puppet.notice 'Host is in Maintenance Mode. Exiting...'
+          host.ExitMaintenanceMode_Task(:timeout => '600').wait_for_completion
+        end
+
         Puppet.notice 'Reconfiguring HA Agent'
         connection_state = ( host.summary.runtime.dasHostState.state || '' )
         if connection_state == 'fdmUnreachable' || resource[:force]
